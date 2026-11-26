@@ -6,6 +6,7 @@ import com.bplay.bhraspincasino.domain.ResolveOfferLinkUseCase
 import com.bplay.bhraspincasino.push.PushLaunch
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +26,7 @@ class GateViewModel(private val resolveOfferLink: ResolveOfferLinkUseCase) : Vie
     private var started = false
     private var pageEverShown = false
     private var lastPush: PushLaunch? = null
+    private var failedRetries = 0
     private var openJob: Job? = null
 
     fun dispatch(intent: GateIntent) {
@@ -46,24 +48,44 @@ class GateViewModel(private val resolveOfferLink: ResolveOfferLinkUseCase) : Vie
 
             GateIntent.PageReady -> {
                 pageEverShown = true
+                failedRetries = 0
                 _state.update { it.copy(stage = GateStage.Page) }
             }
 
             GateIntent.PageUnavailable -> _state.update { it.copy(stage = GateStage.Offline) }
-            GateIntent.NetworkBack -> if (pageEverShown) {
-                _commands.trySend(GateCommand.Reload)
-            } else {
-                open(lastPush)
-            }
+            GateIntent.NetworkBack -> retry()
         }
     }
 
     private fun open(push: PushLaunch?) {
         lastPush = push
+        failedRetries = 0
+        openJob?.cancel()
+        openJob = viewModelScope.launch { _commands.send(GateCommand.Load(linkFor(push))) }
+    }
+
+    private fun retry() {
+        val wait = retryDelayMillis(failedRetries++)
+        _state.update { it.copy(stage = GateStage.Splash) }
         openJob?.cancel()
         openJob = viewModelScope.launch {
-            val url = push?.offerUrl ?: resolveOfferLink(clickId = push?.clickId)
-            _commands.send(GateCommand.Load(url))
+            delay(wait)
+            val command =
+                if (pageEverShown) GateCommand.Reload else GateCommand.Load(linkFor(lastPush))
+            _commands.send(command)
         }
+    }
+
+    private suspend fun linkFor(push: PushLaunch?): String =
+        push?.offerUrl ?: resolveOfferLink(clickId = push?.clickId)
+
+    private companion object {
+        const val FIRST_RETRY_DELAY_MILLIS = 1_000L
+        const val MAX_RETRY_DELAY_MILLIS = 30_000L
+
+        fun retryDelayMillis(failedRetries: Int): Long =
+            (FIRST_RETRY_DELAY_MILLIS shl failedRetries.coerceAtMost(5)).coerceAtMost(
+                MAX_RETRY_DELAY_MILLIS
+            )
     }
 }

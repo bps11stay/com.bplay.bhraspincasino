@@ -63,6 +63,34 @@ class GateViewModelTest {
     }
 
     @Test
+    fun `each failed retry goes offline again and waits longer`() = runTest {
+        viewModel.dispatch(GateIntent.ColdStart(push = null))
+        viewModel.commands.first()
+        val link = GateCommand.Load("$base&track_ph=token-1")
+
+        viewModel.dispatch(GateIntent.PageUnavailable)
+        viewModel.dispatch(GateIntent.NetworkBack)
+        assertEquals(GateStage.Splash, viewModel.state.value.stage)
+        var startedAt = currentTime
+        assertEquals(link, viewModel.commands.first())
+        assertEquals(1_000L, currentTime - startedAt)
+
+        viewModel.dispatch(GateIntent.PageUnavailable)
+        assertEquals(GateStage.Offline, viewModel.state.value.stage)
+        viewModel.dispatch(GateIntent.NetworkBack)
+        startedAt = currentTime
+        assertEquals(link, viewModel.commands.first())
+        assertEquals(2_000L, currentTime - startedAt)
+
+        viewModel.dispatch(GateIntent.PageReady)
+        viewModel.dispatch(GateIntent.PageUnavailable)
+        viewModel.dispatch(GateIntent.NetworkBack)
+        startedAt = currentTime
+        assertEquals(GateCommand.Reload, viewModel.commands.first())
+        assertEquals(1_000L, currentTime - startedAt)
+    }
+
+    @Test
     fun `retention push adds track_cl and offer push opens its own link`() = runTest {
         viewModel.dispatch(GateIntent.ColdStart(PushLaunch(clickId = "pub-42", offerUrl = null)))
         assertEquals(
