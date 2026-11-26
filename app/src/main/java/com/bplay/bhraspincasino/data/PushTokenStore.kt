@@ -10,6 +10,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 
 private val Context.sessionPreferences: DataStore<Preferences> by preferencesDataStore(name = "bplay_session")
 
@@ -23,7 +24,10 @@ class PushTokenStore(context: Context) {
         .first()
 
     suspend fun write(token: String) {
-        runCatching { preferences.edit { it[PUSH_TOKEN] = token } }
+        try {
+            preferences.edit { it[PUSH_TOKEN] = token }
+        } catch (_: IOException) {
+        }
     }
 
     private companion object {
