@@ -10,6 +10,7 @@ import android.view.View
 import android.webkit.CookieManager
 import android.webkit.WebSettings
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -35,6 +36,7 @@ class GateActivity : ComponentActivity() {
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             chromeClient.onPickerResult(it.resultCode, it.data)
         }
+    private val exitPrompt = ExitPrompt(this)
     private val networkWatcher by lazy { NetworkReturnWatcher(this) { viewModel.dispatch(GateIntent.NetworkBack) } }
 
     private lateinit var binding: ActivityGateBinding
@@ -50,6 +52,7 @@ class GateActivity : ComponentActivity() {
         setContentView(binding.root)
         setUpWebView()
         padForSystemBars()
+        handleBack()
         observe()
 
         val pageState = savedInstanceState?.getBundle(KEY_PAGE_STATE)
@@ -84,6 +87,7 @@ class GateActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        exitPrompt.dismiss()
         networkWatcher.stop()
         chromeClient.dropPending()
         binding.gateWeb.destroy()
@@ -124,6 +128,15 @@ class GateActivity : ComponentActivity() {
             view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
             WindowInsetsCompat.CONSUMED
         }
+    }
+
+    private fun handleBack() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val web = binding.gateWeb
+                if (web.canGoBack()) web.goBack() else exitPrompt.show()
+            }
+        })
     }
 
     private fun observe() {

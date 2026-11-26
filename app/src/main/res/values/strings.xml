@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">B-play Спін Казіно</string>
     <string name="push_channel_name">Offers and news</string>
+    <string name="exit_question">Are you sure you want to exit?</string>
+    <string name="exit_yes">Yes</string>
+    <string name="exit_no">No</string>
 </resources>
