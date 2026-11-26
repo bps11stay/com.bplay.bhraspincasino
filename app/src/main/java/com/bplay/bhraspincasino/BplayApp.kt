@@ -1,0 +1,17 @@
+package com.bplay.bhraspincasino
+
+import android.app.Application
+import com.bplay.bhraspincasino.core.dataModule
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
+
+class BplayApp : Application() {
+
+    override fun onCreate() {
+        super.onCreate()
+        startKoin {
+            androidContext(this@BplayApp)
+            modules(dataModule)
+        }
+    }
+}
