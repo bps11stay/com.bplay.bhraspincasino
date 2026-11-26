@@ -26,6 +26,8 @@ class GateViewModel(private val resolveOfferLink: ResolveOfferLinkUseCase) : Vie
     private var started = false
     private var pageEverShown = false
     private var lastPush: PushLaunch? = null
+    private var sentLink: String? = null
+    private var shownPage: String? = null
     private var failedRetries = 0
     private var openJob: Job? = null
 
@@ -34,6 +36,8 @@ class GateViewModel(private val resolveOfferLink: ResolveOfferLinkUseCase) : Vie
             is GateIntent.ColdStart -> if (!started) {
                 started = true
                 open(intent.push)
+            } else {
+                reattach()
             }
 
             GateIntent.Restored -> {
@@ -46,8 +50,10 @@ class GateViewModel(private val resolveOfferLink: ResolveOfferLinkUseCase) : Vie
                 open(intent.push)
             }
 
-            GateIntent.PageReady -> {
+            is GateIntent.PageReady -> {
                 pageEverShown = true
+                intent.url?.takeIf { it.startsWith("http", ignoreCase = true) }
+                    ?.let { shownPage = it }
                 failedRetries = 0
                 _state.update { it.copy(stage = GateStage.Page) }
             }
@@ -61,7 +67,14 @@ class GateViewModel(private val resolveOfferLink: ResolveOfferLinkUseCase) : Vie
         lastPush = push
         failedRetries = 0
         openJob?.cancel()
-        openJob = viewModelScope.launch { _commands.send(GateCommand.Load(linkFor(push))) }
+        openJob = viewModelScope.launch { send(GateCommand.Load(linkFor(push))) }
+    }
+
+    private fun reattach() {
+        val url = shownPage ?: sentLink ?: return
+        openJob?.cancel()
+        _state.update { it.copy(stage = GateStage.Splash) }
+        _commands.trySend(GateCommand.Load(url))
     }
 
     private fun retry() {
@@ -72,8 +85,13 @@ class GateViewModel(private val resolveOfferLink: ResolveOfferLinkUseCase) : Vie
             delay(wait)
             val command =
                 if (pageEverShown) GateCommand.Reload else GateCommand.Load(linkFor(lastPush))
-            _commands.send(command)
+            send(command)
         }
+    }
+
+    private suspend fun send(command: GateCommand) {
+        if (command is GateCommand.Load) sentLink = command.url
+        _commands.send(command)
     }
 
     private suspend fun linkFor(push: PushLaunch?): String =

@@ -51,12 +51,11 @@ class GateViewModelTest {
     }
 
     @Test
-    fun `cold start loads the standard link once`() = runTest {
-        viewModel.dispatch(GateIntent.ColdStart(push = null))
+    fun `cold start loads the standard link and reloads it when the network returns`() = runTest {
         viewModel.dispatch(GateIntent.ColdStart(push = null))
 
         assertEquals(GateCommand.Load("$base&track_ph=token-1"), viewModel.commands.first())
-        viewModel.dispatch(GateIntent.PageReady)
+        viewModel.dispatch(GateIntent.PageReady("https://host.test/lobby"))
         viewModel.dispatch(GateIntent.PageUnavailable)
         viewModel.dispatch(GateIntent.NetworkBack)
         assertEquals(GateCommand.Reload, viewModel.commands.first())
@@ -82,7 +81,7 @@ class GateViewModelTest {
         assertEquals(link, viewModel.commands.first())
         assertEquals(2_000L, currentTime - startedAt)
 
-        viewModel.dispatch(GateIntent.PageReady)
+        viewModel.dispatch(GateIntent.PageReady("https://host.test/lobby"))
         viewModel.dispatch(GateIntent.PageUnavailable)
         viewModel.dispatch(GateIntent.NetworkBack)
         startedAt = currentTime
@@ -116,5 +115,27 @@ class GateViewModelTest {
             GateCommand.Load("$base&track_cl=pub-42&track_ph=token-1"),
             viewModel.commands.first()
         )
+    }
+
+    @Test
+    fun `recreated screen reloads the page it was showing`() = runTest {
+        viewModel.dispatch(GateIntent.ColdStart(push = null))
+        viewModel.commands.first()
+        viewModel.dispatch(GateIntent.PageReady("https://host.test/lobby"))
+
+        viewModel.dispatch(GateIntent.ColdStart(push = null))
+
+        assertEquals(GateStage.Splash, viewModel.state.value.stage)
+        assertEquals(GateCommand.Load("https://host.test/lobby"), viewModel.commands.first())
+    }
+
+    @Test
+    fun `recreated screen before any page reloads the sent link`() = runTest {
+        viewModel.dispatch(GateIntent.ColdStart(PushLaunch(clickId = "pub-42", offerUrl = null)))
+        val sent = viewModel.commands.first()
+
+        viewModel.dispatch(GateIntent.ColdStart(push = null))
+
+        assertEquals(sent, viewModel.commands.first())
     }
 }

@@ -16,7 +16,7 @@
 
         <activity
             android:name=".ui.gate.GateActivity"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode|density|fontScale|locale|layoutDirection"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|density|layoutDirection|colorMode|grammaticalGender|fontWeightAdjustment"
             android:exported="true"
             android:launchMode="singleTask"
             android:theme="@style/Theme.Bplay.Starting"

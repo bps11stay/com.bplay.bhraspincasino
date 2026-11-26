@@ -13,7 +13,7 @@ import androidx.core.net.toUri
 import java.net.URISyntaxException
 
 class GateWebClient(
-    private val onPageReady: () -> Unit,
+    private val onPageReady: (String?) -> Unit,
     private val onPageUnavailable: () -> Unit,
 ) : WebViewClient() {
 
@@ -24,7 +24,7 @@ class GateWebClient(
     }
 
     override fun onPageFinished(view: WebView, url: String?) {
-        if (!mainFrameFailed) onPageReady()
+        if (!mainFrameFailed) onPageReady(url)
     }
 
     override fun onReceivedError(
@@ -48,7 +48,9 @@ class GateWebClient(
 
             null, "file", "content", "javascript", "data", "about" -> true
             else -> {
-                startOutside(view.context, Intent(Intent.ACTION_VIEW, target))
+                val external =
+                    Intent(Intent.ACTION_VIEW, target).addCategory(Intent.CATEGORY_BROWSABLE)
+                startOutside(view.context, external)
                 true
             }
         }

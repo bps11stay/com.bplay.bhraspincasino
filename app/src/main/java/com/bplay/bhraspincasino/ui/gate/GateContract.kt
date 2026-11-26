@@ -10,7 +10,7 @@ sealed interface GateIntent {
     data class ColdStart(val push: PushLaunch?) : GateIntent
     data object Restored : GateIntent
     data class PushTapped(val push: PushLaunch) : GateIntent
-    data object PageReady : GateIntent
+    data class PageReady(val url: String?) : GateIntent
     data object PageUnavailable : GateIntent
     data object NetworkBack : GateIntent
 }

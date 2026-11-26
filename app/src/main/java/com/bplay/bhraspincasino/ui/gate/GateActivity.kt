@@ -59,7 +59,7 @@ class GateActivity : ComponentActivity() {
         if (pageState != null && binding.gateWeb.restoreState(pageState) != null) {
             viewModel.dispatch(GateIntent.Restored)
         } else {
-            viewModel.dispatch(GateIntent.ColdStart(pushFrom(intent)))
+            viewModel.dispatch(GateIntent.ColdStart(takePush(intent)))
         }
         if (savedInstanceState == null) notificationPermission.askIfNeeded()
     }
@@ -67,7 +67,7 @@ class GateActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        pushFrom(intent)?.let { viewModel.dispatch(GateIntent.PushTapped(it)) }
+        takePush(intent)?.let { viewModel.dispatch(GateIntent.PushTapped(it)) }
     }
 
     override fun onResume() {
@@ -112,7 +112,7 @@ class GateActivity : ComponentActivity() {
             setAcceptThirdPartyCookies(this@with, true)
         }
         webViewClient = GateWebClient(
-            onPageReady = { viewModel.dispatch(GateIntent.PageReady) },
+            onPageReady = { url -> viewModel.dispatch(GateIntent.PageReady(url)) },
             onPageUnavailable = { viewModel.dispatch(GateIntent.PageUnavailable) },
         )
         webChromeClient = chromeClient
@@ -173,10 +173,13 @@ class GateActivity : ComponentActivity() {
         false
     }
 
-    private fun pushFrom(intent: Intent?): PushLaunch? {
-        val fromHistory =
-            intent != null && (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0
-        return if (fromHistory) null else PushLaunch.from(intent)
+    private fun takePush(intent: Intent?): PushLaunch? {
+        if (intent == null) return null
+        val fromHistory = (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0
+        val push = if (fromHistory) null else PushLaunch.from(intent)
+        intent.removeExtra(PushLaunch.KEY_CLICK_ID)
+        intent.removeExtra(PushLaunch.KEY_OFFER_URL)
+        return push
     }
 
     private companion object {
