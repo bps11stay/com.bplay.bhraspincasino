@@ -30,7 +30,13 @@ class PushNotifier(private val context: Context) {
 
     fun show(title: String?, body: String?, data: Map<String, String>) {
         if (title.isNullOrBlank() && body.isNullOrBlank()) return
-        if (!canPost()) return
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
         ensureChannel()
         val id = nextId.incrementAndGet()
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
@@ -43,16 +49,11 @@ class PushNotifier(private val context: Context) {
             .setAutoCancel(true)
             .setContentIntent(openAppIntent(id, data))
             .build()
-        NotificationManagerCompat.from(context).notify(id, notification)
+        try {
+            NotificationManagerCompat.from(context).notify(id, notification)
+        } catch (_: SecurityException) {
+        }
     }
-
-    private fun canPost(): Boolean =
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) ==
-                PackageManager.PERMISSION_GRANTED
 
     private fun openAppIntent(requestCode: Int, data: Map<String, String>): PendingIntent? {
         val launch =
