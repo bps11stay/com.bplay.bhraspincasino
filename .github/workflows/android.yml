@@ -23,7 +23,7 @@ jobs:
           distribution: temurin
           java-version: '25'
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: Unit tests
         run: ./gradlew testDebugUnitTest --stacktrace
@@ -34,13 +34,13 @@ jobs:
       - name: Debug APK
         run: ./gradlew assembleDebug --stacktrace
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: bplay-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: bplay-test-and-lint-reports
@@ -67,7 +67,7 @@ jobs:
           distribution: temurin
           java-version: '25'
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: Restore upload keystore
         env:
@@ -86,13 +86,13 @@ jobs:
       - name: Release AAB and APK
         run: ./gradlew bundleRelease assembleRelease --stacktrace
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: bplay-release-aab
           path: app/build/outputs/bundle/release/*.aab
           if-no-files-found: error
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: bplay-release-apk
           path: app/build/outputs/apk/release/*.apk
