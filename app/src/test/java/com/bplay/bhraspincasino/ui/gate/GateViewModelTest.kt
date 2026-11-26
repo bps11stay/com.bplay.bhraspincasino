@@ -30,10 +30,10 @@ class GateViewModelTest {
         viewModel = GateViewModel(
             ResolveOfferLinkUseCase(
                 advertisingIds = object : AdvertisingIdSource {
-                    override suspend fun advertisingId(): String? = "aaid-1"
+                    override suspend fun advertisingId(): String = "aaid-1"
                 },
                 pushTokens = object : PushTokenSource {
-                    override suspend fun pushToken(): String? = "token-1"
+                    override suspend fun pushToken(): String = "token-1"
                 },
                 composer = OfferLinkComposer(
                     OfferEndpoint(
@@ -70,23 +70,23 @@ class GateViewModelTest {
         viewModel.dispatch(GateIntent.PageUnavailable)
         viewModel.dispatch(GateIntent.NetworkBack)
         assertEquals(GateStage.Splash, viewModel.state.value.stage)
-        var startedAt = currentTime
+        var startedAt = testScheduler.currentTime
         assertEquals(link, viewModel.commands.first())
-        assertEquals(1_000L, currentTime - startedAt)
+        assertEquals(1_000L, testScheduler.currentTime - startedAt)
 
         viewModel.dispatch(GateIntent.PageUnavailable)
         assertEquals(GateStage.Offline, viewModel.state.value.stage)
         viewModel.dispatch(GateIntent.NetworkBack)
-        startedAt = currentTime
+        startedAt = testScheduler.currentTime
         assertEquals(link, viewModel.commands.first())
-        assertEquals(2_000L, currentTime - startedAt)
+        assertEquals(2_000L, testScheduler.currentTime - startedAt)
 
         viewModel.dispatch(GateIntent.PageReady("https://host.test/lobby"))
         viewModel.dispatch(GateIntent.PageUnavailable)
         viewModel.dispatch(GateIntent.NetworkBack)
-        startedAt = currentTime
+        startedAt = testScheduler.currentTime
         assertEquals(GateCommand.Reload, viewModel.commands.first())
-        assertEquals(1_000L, currentTime - startedAt)
+        assertEquals(1_000L, testScheduler.currentTime - startedAt)
     }
 
     @Test

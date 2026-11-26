@@ -11,7 +11,7 @@ class BplayMessagingService : FirebaseMessagingService() {
     private val tokenStore: PushTokenStore by inject()
     private val notifier: PushNotifier by inject()
 
-    @Suppress("DEPRECATION")
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun onNewToken(token: String) {
         runBlocking { tokenStore.write(token) }
     }
