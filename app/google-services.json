@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "983223808953",
+    "firebase_url": "https://bpsc-11-5y71-default-rtdb.firebaseio.com",
+    "project_id": "bpsc-11-5y71",
+    "storage_bucket": "bpsc-11-5y71.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:983223808953:android:e426c717700cef55ebfc68",
+        "android_client_info": {
+          "package_name": "com.bplay.bhraspincasino"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsYQj85EWxuFKqBCHF2VX6wlfPhmh_onc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
